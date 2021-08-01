@@ -9,10 +9,11 @@
 <body>
     chat app
     <form id="message-form">
-        <input placeholder="Message">
+        <input name="message" placeholder="Message">
         <button>send</button>
     </form>
-
+    <button id='send-location'>Send Location</button>
+    
     <script src="socket.io/socket.io.js"></script>
     <script src="js/chat.js"></script>
 </body>

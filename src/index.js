@@ -20,9 +20,18 @@ io.on('connection', (socket) => {
     console.log('new user connected'); /// this is server-side messeage for new user
     
     socket.emit("message", "Welcome");
-
+    socket.broadcast.emit("message", 'A new user joined in the server');
     socket.on('sendMessage', (msg) => {
         io.emit('message', msg); 
+    })
+
+    socket.on('sendLocation', ({latitude,longitude}) => {
+        io.emit('message', `https://google.com/maps?q=${latitude},${longitude}`)
+    })
+
+
+    socket.on('disconnect', () => {
+        io.emit('message', 'A user left');
     })
     
 
