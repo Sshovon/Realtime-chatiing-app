@@ -10,39 +10,48 @@ const $messages = document.querySelector('#messages');
 ////// templates
 const messageTemplate = document.querySelector('#message-template').innerHTML;
 const locationMessageTemplate = document.querySelector('#location-message-template').innerHTML;
-//////
+
+
+////// options
+const {username,room} = Qs.parse(location.search, { ignoreQueryPrefix: true });
+
+///////////
 
 
 
-socket.on("message", (message) => {
+socket.on("message", (message ) => {
     const html = Mustache.render(messageTemplate, {
         message: message.text,
-        createdAt : moment(message.createdAt).format('h:mm a')
+        createdAt: moment(message.createdAt).format('h:mm a'),
+        username:message.username
     });
 
     $messages.insertAdjacentHTML('beforeend', html);
 
 })
 
-socket.on('locationMessage', ({location,createdAt}) => {
+socket.on('locationMessage', ({location,createdAt,username}) => {
     const html = Mustache.render(locationMessageTemplate, {
         location,
-        createdAt: moment(createdAt).format('h:mm a')
+        createdAt: moment(createdAt).format('h:mm a'),
+        username
     });
     $messages.insertAdjacentHTML('beforeend', html);
 })
+
+
 
 $messageForm.addEventListener('submit', (e) => {
     e.preventDefault(); ///so that the page doesn't refresh
     $messageFormButton.setAttribute('disabled', 'disabled');
     const msg = $messageFormInput.value;
 
-    socket.emit('sendMessage', msg, (msgFromAcknowledgement) => {
+    socket.emit('sendMessage',  msg , (error) => {
         $messageFormButton.removeAttribute('disabled');
         $messageFormInput.value = "";
         $messageFormInput.focus();
-        if(msgFromAcknowledgement)
-            return console.log(msgFromAcknowledgement);
+        if(error)
+            return console.log(error);
         
         console.log('message delivered');
     });
@@ -65,3 +74,10 @@ $sendLocationButton.addEventListener('click', () => {
         })
     })
 })
+
+socket.emit('join', { username, room }, (error) => {
+    if (error) {
+        alert(error);
+        location.href ='/'
+    }
+});
