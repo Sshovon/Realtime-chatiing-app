@@ -3,6 +3,9 @@ const http = require('http');
 const path = require('path') //nn to install expliclitly
 const socketio = require('socket.io');
 const port = process.env.PORT || 3000;
+const Filter = require('bad-words');
+const { generateMessage, generateLocationMessage } = require('./utils/messages');
+
 
 const app = express();
 const server = http.createServer(app);
@@ -17,21 +20,29 @@ app.use(express.static(publicDirectoryPath));
 
 
 io.on('connection', (socket) => {
-    console.log('new user connected'); /// this is server-side messeage for new user
-    
-    socket.emit("message", "Welcome");
-    socket.broadcast.emit("message", 'A new user joined in the server');
-    socket.on('sendMessage', (msg) => {
-        io.emit('message', msg); 
+    socket.emit("message", generateMessage('Welcome!') );
+    socket.broadcast.emit("message", generateMessage('A new user joined to the server'));
+
+
+    socket.on('sendMessage', (msg, cb) => {
+        const filter = new Filter()
+        
+        if (filter.isProfane(msg)) {
+            return cb('message is prohabited');
+        }
+        io.emit('message', generateMessage(msg));
+        cb()
     })
 
-    socket.on('sendLocation', ({latitude,longitude}) => {
-        io.emit('message', `https://google.com/maps?q=${latitude},${longitude}`)
+    socket.on('sendLocation', ({ latitude, longitude }, cb) => {
+        if (!(latitude && longitude)) return cb('location not available');
+        io.emit('locationMessage',generateLocationMessage(`https://google.com/maps?q=${latitude},${longitude}`))
+        cb();
     })
 
 
     socket.on('disconnect', () => {
-        io.emit('message', 'A user left');
+        io.emit('message', generateMessage('A user left'));
     })
     
 
