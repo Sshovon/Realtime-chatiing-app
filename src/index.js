@@ -6,7 +6,7 @@ const port = process.env.PORT || 3000;
 const Filter = require('bad-words');
 const { generateMessage, generateLocationMessage } = require('./utils/messages');
 
-const {addUser, removeUser,getUser,getUsersInRoom} = require('./utils/users')
+const {addUser, removeUser,getUser, getUsersInRoom} = require('./utils/users')
 
 
 const app = express();
@@ -28,7 +28,11 @@ io.on('connection', (socket) => {
         if (error) return cb(error);
         socket.join(user.room);
         socket.emit("message", generateMessage(`Welcome! ${user.username}`, 'Admin'));
-        socket.broadcast.to(user.room).emit("message", generateMessage(`${user.username} has joined the chat room`,'Admin'));
+        socket.broadcast.to(user.room).emit("message", generateMessage(`${user.username} has joined the chat room`, 'Admin'));
+        io.to(user.room).emit('roomData', {
+            room: user.room,
+            users: getUsersInRoom(user.room)
+        })
         cb();
     })
 
@@ -50,14 +54,18 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         const user = removeUser(socket.id);
         if (user) {
-            io.to(user.room).emit('message', generateMessage(`${user.username} left the room!`,'Admin') );
+            io.to(user.room).emit('message', generateMessage(`${user.username} left the room!`, 'Admin'));
             
+            io.to(user.room).emit('roomData', {
+                room: user.room,
+                users: getUsersInRoom(user.room) 
+            })
+
         }
     })
 
 
 })
-
 
 server.listen(port, () => {
     console.log(`server is up on port ${port}`)
